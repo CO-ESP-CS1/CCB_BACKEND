@@ -1,0 +1,11 @@
+// src/publication/publication.module.ts
+import { Module } from '@nestjs/common';
+import { PublicationService } from './publication.service';
+import { PublicationController } from './publication.controller';
+import { PrismaService } from '../../prisma/prisma.service';
+
+@Module({
+  controllers: [PublicationController],
+  providers: [PublicationService, PrismaService],
+})
+export class PublicationModule {}

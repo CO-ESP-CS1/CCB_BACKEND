@@ -1,0 +1,717 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model activite {
+  idactivite          Int                  @id @default(autoincrement()) 
+  libelleactivite     String?              @db.VarChar(100)
+  descriptionactivite String?
+  datedebut           DateTime?            @db.Date
+  datefin             DateTime?            @db.Date
+  imageurl            String?
+  statutactivite      String?              @db.VarChar(50)
+  idtypeactivites     Int
+  necessiteInscription Boolean             @default(false)
+  publicCible         String?
+  public_id          String?
+
+  createat            DateTime             @default(now()) @db.Timestamp(6)
+  updateat            DateTime             @default(now()) @db.Timestamp(6)
+
+  typeactivites       typeactivites        @relation(fields: [idtypeactivites], references: [idtypeactivites], onDelete: Cascade, onUpdate: NoAction)
+  activite_assemblee  activite_assemblee[]
+  seance              seance[]
+  inscription         inscription[]        // relation inverse
+
+  activite_departements activite_departement[]  // <-- relation many-to-many via pivot
+
+  @@index([statutactivite], map: "idx_activite_statut")
+}
+
+model activite_assemblee {
+  idactivite  Int
+  idassemblee Int
+  dateprevue  DateTime? @db.Date
+  activite    activite  @relation(fields: [idactivite], references: [idactivite], onDelete: Cascade, onUpdate: NoAction)
+  assemblee   assemblee @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idactivite, idassemblee])
+}
+
+model annonce {
+  idannonce           Int                    @id @default(autoincrement())
+  titreannonce        String?                @db.VarChar(255)
+  descriptionannonce  String?
+  imageurl            String?
+  datepublication     DateTime?              @db.Date
+  priorite            priorite_annonce_enum?
+  statutannonce       statut_annonce_enum?
+  idmembre            Int
+  idtypeannonce       Int
+  publique_cible      String?                @db.VarChar(255)  // <-- nouveau champ optionnel
+  createat            DateTime               @default(now()) @db.Timestamp(6)
+  updateat            DateTime               @default(now()) @db.Timestamp(6)
+  membre              membre                 @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  typeannonce         typeannonce            @relation(fields: [idtypeannonce], references: [idtypeannonce], onDelete: Cascade, onUpdate: NoAction)
+  annonce_assemblee   annonce_assemblee[]
+  annonce_departement annonce_departement[]
+  consultation_annonce consultation_annonce[]
+
+  @@index([datepublication], map: "idx_annonce_date_pub")
+  @@index([statutannonce], map: "idx_annonce_statut")
+}
+
+
+model annonce_assemblee {
+  idannonce       Int
+  idassemblee     Int
+  annonce         annonce   @relation(fields: [idannonce], references: [idannonce], onDelete: Cascade, onUpdate: NoAction)
+  assemblee       assemblee @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idannonce, idassemblee])
+}
+
+model annonce_departement {
+  idannonce     Int
+  iddepartement Int
+  dateciblage   DateTime    @default(now()) @db.Timestamp(6)
+  annonce       annonce     @relation(fields: [idannonce], references: [idannonce], onDelete: Cascade, onUpdate: NoAction)
+  departement   departement @relation(fields: [iddepartement], references: [iddepartement], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idannonce, iddepartement])
+}
+
+model arrondissement {
+  idarrondissement  Int         @id @default(autoincrement())
+  nomarrondissement String?     @db.VarChar(100)
+  idville           Int
+  createat          DateTime    @default(now()) @db.Timestamp(6)
+  updateat          DateTime    @default(now()) @db.Timestamp(6)
+  ville             ville       @relation(fields: [idville], references: [idville], onDelete: Cascade, onUpdate: NoAction)
+  assemblee         assemblee[]
+
+  @@index([nomarrondissement], map: "idx_arrondissement_nom")
+}
+
+model assemblee {
+  idassemblee        Int                  @id @default(autoincrement())
+  nomassemble        String?              @unique @db.VarChar(100)
+  adresseassemblee   String?
+  zone               String?              @db.VarChar(100)
+  idarrondissement   Int
+  createat           DateTime             @default(now()) @db.Timestamp(6)
+  updateat           DateTime             @default(now()) @db.Timestamp(6)
+  activite_assemblee activite_assemblee[]
+  annonce_assemblee  annonce_assemblee[]
+  arrondissement     arrondissement       @relation(fields: [idarrondissement], references: [idarrondissement], onDelete: Cascade, onUpdate: NoAction)
+  assembleeplanning  assembleeplanning[]
+  departement        departement[]
+  membre             membre[]
+  profilassemblee    profilassemblee[]
+
+  @@index([nomassemble], map: "idx_assemblee_nom")
+}
+
+model assembleeplanning {
+  idassemblee Int
+  idplanning  Int
+  assemblee   assemblee @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+  planning    planning  @relation(fields: [idplanning], references: [idplanning], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idassemblee, idplanning])
+  @@index([idplanning, idassemblee], map: "idx_assembleeplanning_planning")
+}
+
+model badge {
+  idbadge      Int            @id @default(autoincrement())
+  nombadge     String         @db.VarChar(100)
+  description  String?
+  iconeurl     String?
+  couleur      String?        @db.VarChar(20)
+  createat     DateTime       @default(now()) @db.Timestamp(6)
+  updateat     DateTime       @default(now()) @db.Timestamp(6)
+  membre_badge membre_badge[]
+}
+
+model coderecuperation {
+  idcoderecuperation Int                       @id @default(autoincrement())
+  telephone          String?                   @db.VarChar(20)
+  codeotp            String?                   @db.VarChar(10)
+  deviceid           String?
+  coderecup          String?
+  datedebutvalidite  DateTime?                 @db.Timestamp(6)
+  expirele           DateTime?                 @db.Timestamp(6)
+  estutilise         Boolean?
+  statut             statut_code_recuperation?
+  connexionid        Int
+  createat           DateTime                  @default(now()) @db.Timestamp(6)
+  updateat           DateTime                  @default(now()) @db.Timestamp(6)
+  connexion          connexion                 @relation(fields: [connexionid], references: [connexionid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([statut], map: "idx_code_recup_statut")
+}
+
+model connexion {
+  connexionid      Int                    @id @default(autoincrement())
+  telephone        String?                @db.VarChar(20)
+  mot_de_passe     String?                @db.VarChar(70)
+  coderecup        String?
+  statutconnexion  statut_connexion_enum?
+  idpersonne       Int?
+  createat         DateTime               @default(now()) @db.Timestamp(6)
+  updateat         DateTime               @default(now()) @db.Timestamp(6)
+  coderecuperation coderecuperation[]
+  personne         personne?              @relation(fields: [idpersonne], references: [idpersonne], onDelete: Cascade, onUpdate: NoAction)
+  session          session[]
+
+  @@index([statutconnexion], map: "idx_connexion_statut")
+}
+
+model departement {
+  iddepartement       Int                   @id @default(autoincrement())
+  nomdepartement      String?               @db.VarChar(100)
+  responsable         String?               @db.VarChar(50)
+  idassemblee         Int?
+  createat            DateTime              @default(now()) @db.Timestamp(6)
+  updateat            DateTime              @default(now()) @db.Timestamp(6)
+  annonce_departement annonce_departement[]
+  assemblee           assemblee?            @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+  dirige              dirige[]
+  est                 est[]
+  profildepartement   profildepartement[]
+
+  activite_departements activite_departement[]  // <-- relation many-to-many via pivot
+}
+
+
+model activite_departement {
+  idactivite    Int
+  iddepartement Int
+
+  activite      activite     @relation(fields: [idactivite], references: [idactivite], onDelete: Cascade)
+  departement   departement  @relation(fields: [iddepartement], references: [iddepartement], onDelete: Cascade)
+
+  @@id([idactivite, iddepartement])   // clé primaire composée
+  @@index([iddepartement], map: "idx_activitedepartement_departement")
+}
+
+
+model dirige {
+  idmembre      Int
+  iddepartement Int
+  datedebut     DateTime?   @db.Date
+  departement   departement @relation(fields: [iddepartement], references: [iddepartement], onDelete: Cascade, onUpdate: NoAction)
+  membre        membre      @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idmembre, iddepartement])
+}
+
+model est {
+  idmembre        Int
+  iddepartement   Int
+  dateattribution DateTime?   @db.Date
+  departement     departement @relation(fields: [iddepartement], references: [iddepartement], onDelete: Cascade, onUpdate: NoAction)
+  membre          membre      @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idmembre, iddepartement])
+}
+
+model inscription {
+  idinscription Int                      @id @default(autoincrement())
+  statut        statut_inscription_enum?
+  idmembre      Int
+  idactivite    Int                      // relation vers activité
+
+  createat      DateTime                 @default(now()) @db.Timestamp(6)
+  updateat      DateTime                 @default(now()) @db.Timestamp(6)
+
+  membre        membre                   @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  activite      activite                 @relation(fields: [idactivite], references: [idactivite], onDelete: Cascade)
+
+  @@index([statut], map: "idx_inscription_statut")
+}
+
+
+model interaction {
+  idinteraction Int                    @id @default(autoincrement())
+  type          interaction_type_enum?
+  ressourcetype String?                @db.VarChar(100)
+  ressourceid   Int?
+  contenu       String?
+  idmembre      Int
+  createat      DateTime               @default(now()) @db.Timestamp(6)
+  updateat      DateTime               @default(now()) @db.Timestamp(6)
+  membre        membre                 @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([ressourcetype, ressourceid], map: "idx_interaction_type_id")
+}
+
+model intervenant {
+  idintervenant     Int      @id @default(autoincrement())
+  nomintervenant    String?  @db.VarChar(100)
+  prenomintervenant String?  @db.VarChar(100)
+  idmembre          Int?
+  createat          DateTime @default(now()) @db.Timestamp(6)
+  updateat          DateTime @default(now()) @db.Timestamp(6)
+  membre            membre?  @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  seance            seance[]
+}
+
+model live {
+  idlive          Int               @id @default(autoincrement())
+  videourl        String?
+  statutlive      statut_live_enum?
+  titrelive       String?           @db.VarChar(255)
+  descriptionlive String?
+  heuredebut      DateTime?         @db.Time(6)
+  heurefin        DateTime?         @db.Time(6)
+  idseance        Int?
+  createat        DateTime          @default(now()) @db.Timestamp(6)
+  updateat        DateTime          @default(now()) @db.Timestamp(6)
+  idmembre        Int
+  membre          membre            @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction, map: "fk_live_membre")
+  seance          seance?           @relation(fields: [idseance], references: [idseance], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([statutlive], map: "idx_live_statut")
+}
+
+model loginhistory {
+  idloginhistory Int       @id @default(autoincrement())
+  personnelid    Int
+  ipadresse      String?
+  useragent      String?
+  logintime      DateTime? @db.Timestamp(6)
+  logouttime     DateTime? @db.Timestamp(6)
+  createat       DateTime  @default(now()) @db.Timestamp(6)
+  updateat       DateTime  @default(now()) @db.Timestamp(6)
+  personne       personne  @relation(fields: [personnelid], references: [idpersonne], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([logintime], map: "idx_login_history_login_time")
+}
+
+
+
+
+model membre {
+  idmembre           Int                  @id @default(autoincrement())
+  codemembre         String?              @unique @db.VarChar(50)
+  solde              Decimal?             @db.Decimal(10, 2)
+  dateadhesion       DateTime?            @db.Date
+  statutmembre       statut_membre_enum?
+  role               role_enum            @default(membre)  // <--- ajouté ici
+  idassemblee        Int
+  idpersonne         Int
+  createat           DateTime             @default(now()) @db.Timestamp(6)
+  updateat           DateTime             @default(now()) @db.Timestamp(6)
+  annonce            annonce[]
+  dirige             dirige[]
+  est                est[]
+  inscription        inscription[]
+  interaction        interaction[]
+  intervenant        intervenant[]
+  live               live[]
+  assemblee          assemblee            @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+  personne           personne             @relation(fields: [idpersonne], references: [idpersonne], onDelete: Cascade, onUpdate: NoAction)
+  membre_badge       membre_badge[]
+  participe          participe[]
+  publication        publication[]
+  publication_action publication_action[]
+  consultation_annonce consultation_annonce[]
+
+  @@index([codemembre], map: "idx_membre_code")
+  @@index([idpersonne, idassemblee], map: "idx_membre_personne_assemblee")
+  @@index([statutmembre], map: "idx_membre_statut")
+}
+
+
+model consultation_annonce {
+  idconsultation Int       @id @default(autoincrement())
+  idmembre       Int
+  idannonce      Int
+  dateconsultation DateTime @default(now())
+
+  // Relations
+  membre   membre   @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade)
+  annonce  annonce  @relation(fields: [idannonce], references: [idannonce], onDelete: Cascade)
+
+  @@unique([idmembre, idannonce]) // Optionnel : un membre ne peut consulter une annonce qu'une seule fois
+  @@index([idmembre])
+  @@index([idannonce])
+}
+
+
+model membre_badge {
+  idmembre        Int
+  idbadge         Int
+  dateattribution DateTime @default(now()) @db.Timestamp(6)
+  badge           badge    @relation(fields: [idbadge], references: [idbadge], onDelete: Cascade, onUpdate: NoAction)
+  membre          membre   @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idmembre, idbadge])
+}
+
+model participe {
+  idmembre Int
+  idseance Int
+  membre   membre @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  seance   seance @relation(fields: [idseance], references: [idseance], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([idmembre, idseance])
+}
+
+model pays {
+  idpays   Int      @id @default(autoincrement())
+  nompays  String?  @unique @db.VarChar(100)
+  createat DateTime @default(now()) @db.Timestamp(6)
+  updateat DateTime @default(now()) @db.Timestamp(6)
+  ville    ville[]
+
+  @@index([nompays], map: "idx_pays_nom")
+}
+
+model personne {
+  idpersonne     Int              @id @default(autoincrement())
+  nom            String?          @db.VarChar(100)
+  prenom         String?          @db.VarChar(100)
+  telephone      String?          @unique @db.VarChar(20)
+  email          String?          @unique @db.VarChar(100)
+  sexe           String?          @db.VarChar(10)
+  datenaissance  DateTime?        @db.Date
+  createat       DateTime         @default(now()) @db.Timestamp(6)
+  updateat       DateTime         @default(now()) @db.Timestamp(6)
+  connexion      connexion[]
+  loginhistory   loginhistory[]
+  membre         membre[]
+  profilpersonne profilpersonne[]
+
+  @@index([nom, prenom], map: "idx_personne_nom_prenom")
+  @@index([telephone], map: "idx_personne_telephone")
+}
+
+model planning {
+  idplanning          Int                   @id @default(autoincrement())
+  typeplanning        type_planning_enum?             
+  datedebut           DateTime?             @db.Date
+  datefin             DateTime?             @db.Date
+  etatplanning        etat_planning_enum?
+  titreplanning       String?               @db.VarChar(100)
+  descriptionplanning String?
+  statutplanning      statut_planning_enum?
+  createat            DateTime              @default(now()) @db.Timestamp(6)
+  updateat            DateTime              @default(now()) @db.Timestamp(6)
+  assembleeplanning   assembleeplanning[]
+  seance              seance[]
+
+  @@index([statutplanning], map: "idx_planning_statut")
+}
+
+model profilassemblee {
+  idprofilassemblee Int       @id @default(autoincrement())
+  description       String?
+  photourl          String?
+  couvertureurl     String?
+  idassemblee       Int
+  createat          DateTime  @default(now()) @db.Timestamp(6)
+  updateat          DateTime  @default(now()) @db.Timestamp(6)
+  assemblee         assemblee @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model profildepartement {
+  idprofildepartement Int          @id @default(autoincrement())
+  description         String?      @db.VarChar(100)
+  photourl            String?
+  couvertureurl       String?
+  iddepartement       Int?
+  createat            DateTime     @default(now()) @db.Timestamp(6)
+  updateat            DateTime     @default(now()) @db.Timestamp(6)
+  departement         departement? @relation(fields: [iddepartement], references: [iddepartement], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model profilpersonne {
+  idprofilpersonne Int      @id @default(autoincrement())
+  description      String?
+  adresse          String?
+  photourl         String?
+  couvertureurl    String?
+  idpersonne       Int
+  createat         DateTime @default(now()) @db.Timestamp(6)
+  updateat         DateTime @default(now()) @db.Timestamp(6)
+  personne         personne @relation(fields: [idpersonne], references: [idpersonne], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model publication {
+  idpublication      Int                      @id @default(autoincrement())
+  titre              String?                  @db.VarChar(255)      
+  description        String?
+  mediaurl           String?                  @db.VarChar(2083)      
+  mediaurl2          String?                  @db.VarChar(2083)      
+  mediaurl3          String?                  @db.VarChar(2083)
+  public_id          String?                  @db.VarChar(255) 
+  public_id2         String?                  @db.VarChar(255)
+  public_id3         String?                  @db.VarChar(255)    
+  expirationdate     DateTime?                @db.Date
+  statutpublication  statut_publication_enum?
+  typepublication    type_publication_enum?   // ✅ Remplace l'ancienne relation par un enum
+  esttemporaire      Boolean                  @default(false) // ✅ Nouveau champ
+  idmembre           Int
+  
+  
+  createat           DateTime                 @default(now()) @db.Timestamp(6)
+  updateat           DateTime                 @default(now()) @db.Timestamp(6)
+
+  membre             membre                   @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  publication_action publication_action[]
+
+  @@index([expirationdate], map: "idx_publication_expiration_date")
+  @@index([statutpublication], map: "idx_publication_statut")
+}
+
+
+
+model publication_action {
+  idpublicationaction Int                      @id @default(autoincrement())
+  action              publication_action_enum?
+  motif               String?
+  idpublication       Int
+  idmembre            Int
+  createat            DateTime                 @default(now()) @db.Timestamp(6)
+  updateat            DateTime                 @default(now()) @db.Timestamp(6)
+  membre              membre                   @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  publication         publication              @relation(fields: [idpublication], references: [idpublication], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model responsabilite {
+  idresponsable        Int                         @id @default(autoincrement())
+  libelle              String?                     @db.VarChar(100)
+  statutresponsabilite statut_responsabilite_enum?
+  idtyperesponsabilite Int
+  createat             DateTime                    @default(now()) @db.Timestamp(6)
+  updateat             DateTime                    @default(now()) @db.Timestamp(6)
+  typeresponsabilite   typeresponsabilite          @relation(fields: [idtyperesponsabilite], references: [idtyperesponsabilite], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([statutresponsabilite], map: "idx_responsabilite_statut")
+}
+
+model seance {
+  idseance          Int                 @id @default(autoincrement())
+  titreseance       String?             @db.VarChar(100)
+  descriptionseance String?
+  heuredebut        DateTime?           
+  heurefin          DateTime?           
+  lieu              String?             @db.VarChar(100)
+  statutseance      statut_seance_enum?
+  idactivite        Int
+  idplanning        Int
+  idintervenant     Int?
+  createat          DateTime            @default(now()) @db.Timestamp(6)
+  updateat          DateTime            @default(now()) @db.Timestamp(6)
+  live              live[]
+  participe         participe[]
+  activite          activite            @relation(fields: [idactivite], references: [idactivite], onDelete: Cascade, onUpdate: NoAction)
+  intervenant       intervenant?        @relation(fields: [idintervenant], references: [idintervenant], onDelete: Cascade, onUpdate: NoAction)
+  planning          planning            @relation(fields: [idplanning], references: [idplanning], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([statutseance], map: "idx_seance_statut")
+}
+
+model session {
+  idsession     Int                  @id @default(autoincrement())
+  telephone     String?              @db.VarChar(20)
+  deviceid      String?
+  useragent     String?
+  ipadresse     String?
+  statutsession statut_session_enum?
+  connexionid   Int
+  createat      DateTime             @default(now()) @db.Timestamp(6)
+  updateat      DateTime             @default(now()) @db.Timestamp(6)
+  connexion     connexion            @relation(fields: [connexionid], references: [connexionid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([statutsession], map: "idx_session_statut")
+}
+
+model typeactivites {
+  idtypeactivites Int        @id @default(autoincrement())
+  nomtypeactivite String?    @db.VarChar(100)
+  createat        DateTime   @default(now()) @db.Timestamp(6)
+  updateat        DateTime   @default(now()) @db.Timestamp(6)
+  activite        activite[]
+}
+
+model typeannonce {
+  idtypeannonce  Int       @id @default(autoincrement())
+  nomtypeannonce String?   @db.VarChar(100)
+  createat       DateTime  @default(now()) @db.Timestamp(6)
+  updateat       DateTime  @default(now()) @db.Timestamp(6)
+  annonce        annonce[]
+}
+
+
+
+model typeresponsabilite {
+  idtyperesponsabilite      Int              @id @default(autoincrement())
+  libelletyperesponsabilite String           @db.VarChar(100)
+  responsabilite            responsabilite[]
+}
+
+model ville {
+  idville        Int              @id @default(autoincrement())
+  nomville       String?          @db.VarChar(100)
+  idpays         Int
+  createat       DateTime         @default(now()) @db.Timestamp(6)
+  updateat       DateTime         @default(now()) @db.Timestamp(6)
+  arrondissement arrondissement[]
+  pays           pays             @relation(fields: [idpays], references: [idpays], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([nomville], map: "idx_ville_nom")
+}
+
+enum etat_planning_enum {
+  en_attente
+  en_cours
+  termine
+  annule
+}
+
+enum interaction_type_enum {
+  like
+  commentaire
+  partage
+  reaction
+  vote
+  signale
+  vue
+}
+
+enum priorite_annonce_enum {
+  haute
+  normale
+  basse
+  urgent
+}
+
+enum publication_action_enum {
+  valide
+  rejete
+  archive
+  signale
+  modifie
+  en_attente
+}
+
+enum statut_activite_enum {
+  planifie
+  en_cours
+  termine
+  annule
+  desactive
+}
+
+enum statut_annonce_enum {
+  brouillon
+  publie
+  archive
+}
+
+enum statut_code_recuperation {
+  en_attente
+  utilise
+  expire
+}
+
+enum statut_connexion_enum {
+  annule
+  desactive
+  verrouille
+  en_attente
+  active
+}
+
+enum statut_inscription_enum {
+  en_attente
+  confirme
+  annule
+  termine
+}
+
+enum statut_live_enum {
+  programme
+  en_cours
+  termine
+  annule
+}
+
+enum statut_membre_enum {
+  actif
+  inactif
+  suspendu
+  radie
+}
+
+enum statut_planning_enum {
+  actif
+  inactif
+  archive
+}
+
+enum statut_publication_enum {
+  brouillon
+  publie
+  expire
+  archive
+  desactive
+  en_attente
+}
+
+enum statut_responsabilite_enum {
+  actif
+  inactif
+  archive
+}
+
+enum statut_seance_enum {
+  planifie
+  en_cours
+  termine
+  annule
+}
+
+enum statut_session_enum {
+  active
+  expire
+  deconnecte
+  annule
+}
+
+enum role_enum {
+  pasteur
+  membre
+  apotre
+  diacre
+  ancien
+  patriarche
+}
+
+
+enum type_planning_enum {
+  JOURNALIER
+  HEBDOMADAIRE
+  MENSUEL
+  TRIMESTRIEL
+  SEMESTRIEL
+  ANNUEL
+}
+
+
+enum type_publication_enum {
+  STORY
+  POST
+  VIDEO
+  SHORT
+  AUDIO
+  TEXT
+}
