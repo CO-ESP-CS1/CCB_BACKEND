@@ -56,76 +56,111 @@ export class PublicationService {
     return !!memberBadge;
   }
 
-  async findForUser(params: {
-    targetId: number;
-    statut?: statut_publication_enum;
-    type?: type_publication_enum;
-    hasPublicationAutreBadge: boolean;
-    limit?: number;
-    offset?: number;
-  }) {
-    const { 
-      targetId, 
-      statut, 
-      type, 
-      hasPublicationAutreBadge,
-      limit = 20, // Limite par défaut
-      offset = 0  // Offset par défaut
-    } = params;
-    
-    // Construire le filtre WHERE
-    const where: Prisma.publicationWhereInput = {
-      idmembre: targetId
-    };
+ async findForUser(params: {
+  targetId: number;
+  statut?: statut_publication_enum;
+  type?: type_publication_enum;
+  hasPublicationAutreBadge: boolean;
+  limit?: number;
+  offset?: number;
+  currentUserId: number;
+}) {
+  const { 
+    targetId, 
+    statut, 
+    type, 
+    hasPublicationAutreBadge,
+    limit = 20, // Limite par défaut
+    offset = 0, // Offset par défaut
+    currentUserId
+  } = params;
 
-    // Gestion des statuts pour ceux qui n'ont pas le badge spécial
+  const isSelf = targetId === currentUserId;
+
+  // Construire le filtre WHERE
+  const where: Prisma.publicationWhereInput = {
+    idmembre: targetId,
+  };
+
+  // Si ce n’est pas moi → appliquer restriction
+  if (!isSelf) {
     if (!hasPublicationAutreBadge) {
-      where.OR = [
-        { statutpublication: { notIn: ['desactive', 'archive'] } },
-        { statutpublication: null }
-      ];
+      // Pas le droit de voir d’autres publications
+      where.idmembre = currentUserId; // fallback = seulement moi
+    } else {
+      // Badge ok → peut voir un autre membre, mais seulement les publiées si pas de statut
+      where.statutpublication = statut ?? statut_publication_enum.publie;
     }
+  } else {
+    // Moi-même → je vois tout, sauf si j’ai demandé un statut précis
+    if (statut) {
+      where.statutpublication = statut;
+    }
+  }
 
-    // Appliquer les filtres optionnels
-    if (statut) where.statutpublication = statut;
-    if (type) where.typepublication = type;
+  // Appliquer les filtres optionnels
+  if (type) where.typepublication = type;
 
-    // Requête optimisée avec pagination
-    return this.prisma.publication.findMany({
-      where,
-      orderBy: { createat: 'desc' },
-      take: limit,
-      skip: offset,
-      select: {
-        idpublication: true,
-        titre: true,
-        description: true,
-        mediaurl: true,
-        mediaurl2: true,
-        mediaurl3: true,
-        expirationdate: true,
-        statutpublication: true,
-        typepublication: true,
-        esttemporaire: true,
-        createat: true,
-        updateat: true,
-        membre: {
-          select: {
-            idmembre: true,
-          
-          }
+  // Requête optimisée avec pagination
+  return this.prisma.publication.findMany({
+    where,
+    orderBy: { createat: 'desc' },
+    take: limit,
+    skip: offset,
+    select: {
+      idpublication: true,
+      titre: true,
+      description: true,
+      mediaurl: true,
+      mediaurl2: true,
+      mediaurl3: true,
+      expirationdate: true,
+      statutpublication: true,
+      typepublication: true,
+      esttemporaire: true,
+      createat: true,
+      updateat: true,
+      membre: {
+        select: { idmembre: true }
+      }
+    }
+  });
+}
+
+async findAll(limit = 20, offset = 0, statut?: statut_publication_enum) {
+  const where: Prisma.publicationWhereInput = {};
+
+  if (statut) {
+    where.statutpublication = statut;
+  }
+
+  return this.prisma.publication.findMany({
+    where,
+    take: limit,
+    skip: offset,
+    orderBy: { createat: 'desc' },
+    select: {
+      idpublication: true,
+      titre: true,
+      description: true,
+      mediaurl: true,
+      mediaurl2: true,
+      mediaurl3: true,
+      expirationdate: true,
+      statutpublication: true,
+      typepublication: true,
+      esttemporaire: true,
+      createat: true,
+      updateat: true,
+      membre: {
+        select: {
+          idmembre: true,
         }
       }
-    });
-  }
+    }
+  });
+}
 
-  async findAll(limit?: number, offset?: number) {
-    return this.prisma.publication.findMany({
-      take: limit,
-      skip: offset,
-      orderBy: { createat: 'desc' },
-    });
-  }
 
   async findOne(id: number) {
     return this.prisma.publication.findUnique({

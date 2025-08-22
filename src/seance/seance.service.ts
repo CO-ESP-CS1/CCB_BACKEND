@@ -18,68 +18,63 @@ export class SeanceService {
     return this.prisma.seance.create({ data });
   }
 
-  async findAll(
-    page: number = 1,
-    limit: number = 10,
-    dateFilter?: Date,
-    planningId?: number,
-    sortBy?: 'idactivite' | 'idintervenant' | 'date'
-  ) {
-    const skip = (page - 1) * limit;
-    const where: Prisma.seanceWhereInput = {};
-    
-    // Filtrage par date
-    if (dateFilter) {
-      where.OR = [
-        { 
-          heuredebut: { 
-            gte: new Date(dateFilter.setHours(0, 0, 0, 0)),
-            lt: new Date(dateFilter.setHours(23, 59, 59, 999))
-          } 
-        },
-        { 
-          heurefin: { 
-            gte: new Date(dateFilter.setHours(0, 0, 0, 0)),
-            lt: new Date(dateFilter.setHours(23, 59, 59, 999))
-          } 
-        }
-      ];
-    }
-    
-    // Filtrage par planning
-    if (planningId) {
-      where.idplanning = planningId;
-    }
-    
-    // Tri
-    let orderBy: Prisma.seanceOrderByWithRelationInput = {};
-    if (sortBy) {
-      if (sortBy === 'idactivite') orderBy = { idactivite: 'asc' };
-      if (sortBy === 'idintervenant') orderBy = { idintervenant: 'asc' };
-      if (sortBy === 'date') orderBy = { heuredebut: 'asc' };
-    } else {
-      orderBy = { idseance: 'asc' };
-    }
-    
-    const [seances, total] = await Promise.all([
-      this.prisma.seance.findMany({
-        skip,
-        take: limit,
-        where,
-        orderBy,
-      }),
-      this.prisma.seance.count({ where }),
-    ]);
-    
-    return {
-      data: seances,
-      pagination: {
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+async findAll(
+  page: number = 1,
+  limit: number = 10,
+  dateFilter?: Date,
+  planningId?: number,
+  sortBy?: 'idactivite' | 'idintervenant' | 'date',
+  idactivite?: number
+) {
+  const skip = (page - 1) * limit;
+  const where: Prisma.seanceWhereInput = {};
+
+  // Filtrage par date si fourni
+  if (dateFilter) {
+    const start = new Date(dateFilter);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateFilter);
+    end.setHours(23, 59, 59, 999);
+
+    where.OR = [
+      { heuredebut: { gte: start, lt: end } },
+      { heurefin: { gte: start, lt: end } }
+    ];
   }
+
+  // Filtrage par planning
+  if (planningId) {
+    where.idplanning = planningId;
+  }
+
+  // Filtrage par activité
+  if (idactivite) {
+    where.idactivite = idactivite;
+  }
+
+  // Tri toujours par création, décroissant
+  const orderBy: Prisma.seanceOrderByWithRelationInput = { createat: 'desc' };
+
+  const [seances, total] = await Promise.all([
+    this.prisma.seance.findMany({
+      skip,
+      take: limit,
+      where,
+      orderBy,
+    }),
+    this.prisma.seance.count({ where }),
+  ]);
+
+  return {
+    data: seances,
+    pagination: {
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
 
   async findOne(id: number) {
     return this.prisma.seance.findUnique({

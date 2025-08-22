@@ -1,12 +1,12 @@
-import { IsInt, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEstDto {
-  @ApiProperty()
-  @IsInt()
-  idmembre: number;
+  @ApiProperty({ description: 'Code unique du membre' })
+  @IsString()
+  code: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'ID du département' })
   @IsInt()
   iddepartement: number;
 

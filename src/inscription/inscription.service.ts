@@ -8,16 +8,29 @@ import { Prisma } from '@prisma/client';
 @Injectable()
 export class InscriptionService {
   constructor(private readonly prisma: PrismaService) {}
+async create(dto: CreateInscriptionDto) {
+  // Vérifier si l'inscription existe déjà
+  const existing = await this.prisma.inscription.findFirst({
+    where: {
+      idmembre: dto.idmembre,
+      idactivite: dto.idactivite,
+    },
+  });
 
-  async create(dto: CreateInscriptionDto) {
-    return this.prisma.inscription.create({
-      data: {
-        ...dto,
-        createat: new Date(),
-        updateat: new Date(),
-      },
-    });
+  if (existing) {
+    throw new Error('Cette inscription existe déjà pour ce membre et cette activité.');
   }
+
+  // Créer l'inscription
+  return this.prisma.inscription.create({
+    data: {
+      ...dto,
+      createat: new Date(),
+      updateat: new Date(),
+    },
+  });
+}
+
 
   async findAll(
     page: number = 1,

@@ -14,9 +14,29 @@ export class BadgeService {
     });
   }
 
-  findAll() {
-    return this.prisma.badge.findMany();
-  }
+  // badge.service.ts
+async findAll(page: number = 1, limit: number = 10) {
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    this.prisma.badge.findMany({
+      skip,
+      take: limit,
+      orderBy: { createat: 'desc' }, // optionnel, pour avoir les plus récents
+    }),
+    this.prisma.badge.count(),
+  ]);
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
 
   async findOne(id: number) {
     const badge = await this.prisma.badge.findUnique({

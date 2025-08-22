@@ -22,17 +22,23 @@ export class SeanceController {
     return this.service.create(dto);
   }
 
-  @Get()
-  findAll(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 10,
-    @Query('date') dateFilter?: string,
-    @Query('planningId') planningId?: number,
-    @Query('sortBy') sortBy?: 'idactivite' | 'idintervenant' | 'date'
-  ) {
-    const date = dateFilter ? new Date(dateFilter) : undefined;
-    return this.service.findAll(page, limit, date, planningId, sortBy);
-  }
+@Get()
+findAll(
+  @Query('page', ParseIntPipe) page: number = 1,
+  @Query('limit', ParseIntPipe) limit: number = 10,
+  @Query('date') dateFilter?: string,
+  @Query('planningId') planningId?: string,
+  @Query('idactivite') idactivite?: string,
+  @Query('sortBy') sortBy?: 'idactivite' | 'idintervenant' | 'date'
+) {
+  const date = dateFilter ? new Date(dateFilter) : undefined;
+
+  const planningIdNum = planningId ? parseInt(planningId, 10) : undefined;
+  const idactiviteNum = idactivite ? parseInt(idactivite, 10) : undefined;
+
+  return this.service.findAll(page, limit, date, planningIdNum, sortBy, idactiviteNum);
+}
+
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

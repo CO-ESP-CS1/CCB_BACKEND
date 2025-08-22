@@ -119,6 +119,7 @@ async hasUnreadTargetedAnnouncement(
   return stories.map((p) => ({
     idpublication: p.idpublication,
     titre: p.titre,
+    description: p.description,
     mediaurl: p.mediaurl,
     expirationdate: p.expirationdate?.toISOString() ?? null,
     idmembre: p.idmembre,

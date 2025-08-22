@@ -7,9 +7,38 @@ import { UpdateEstDto } from './dto/update-est.dto';
 export class EstService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateEstDto) {
-    return this.prisma.est.create({ data: dto });
+async create(dto: CreateEstDto) {
+  // Chercher le membre via son code
+  const membre = await this.prisma.membre.findUnique({
+    where: { codemembre: dto.code },
+  });
+
+  if (!membre) {
+    throw new NotFoundException(`Membre avec le code ${dto.code} introuvable`);
   }
+
+  // Vérifier si l'association existe déjà
+  const existing = await this.prisma.est.findFirst({
+    where: {
+      idmembre: membre.idmembre,
+      iddepartement: dto.iddepartement,
+      dateattribution: dto.dateattribution ?? null,
+    },
+  });
+
+  if (existing) {
+    throw new Error('Cette attribution existe déjà.');
+  }
+
+  // Créer l'enregistrement avec l'idmembre trouvé
+  return this.prisma.est.create({
+    data: {
+      idmembre: membre.idmembre,
+      iddepartement: dto.iddepartement,
+      dateattribution: dto.dateattribution,
+    },
+  });
+}
 
   async findAll() {
     return this.prisma.est.findMany({

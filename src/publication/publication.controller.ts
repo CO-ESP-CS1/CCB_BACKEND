@@ -110,71 +110,72 @@ export class PublicationController {
     return this.service.create(dto);
   }
 
-  @Get('me')
-  @UseGuards(AuthGuard)
-  @ApiOperation({
-    summary: 'Récupérer les publications pour l\'utilisateur connecté',
-    description: 'Permet de récupérer les publications avec filtres et pagination. Les utilisateurs avec le badge "publicationAutre" peuvent voir les publications d\'autres membres.'
-  })
-  @ApiOkResponse({
-    description: 'Liste des publications récupérée avec succès',
-    type: [PublicationEntity],
-  })
-  @ApiQuery({
-    name: 'statut',
-    required: false,
-    enum: Object.values(statut_publication_enum),
-    description: 'Filtrer par statut de publication',
-    example: statut_publication_enum.publie
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    enum: Object.values(type_publication_enum),
-    description: 'Filtrer par type de publication',
-    example: type_publication_enum.POST
-  })
-  @ApiQuery({
-    name: 'idmembre',
-    required: false,
-    type: Number,
-    description: 'ID du membre pour voir ses publications (nécessite le badge publicationAutre)',
-    example: 123
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Limite de résultats pour la pagination (défaut: 20)',
-    example: 10
-  })
-  @ApiQuery({
-    name: 'offset',
-    required: false,
-    type: Number,
-    description: 'Offset pour la pagination (défaut: 0)',
-    example: 0
-  })
-  async findForUser(
-    @UserPayload() user: any,
-    @Query('statut') statut?: statut_publication_enum,
-    @Query('type') type?: type_publication_enum,
-    @Query('idmembre') idmembre?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
-  ) {
-    const hasPublicationAutreBadge = await this.service.checkPublicationAutreBadge(user.idmembre);
-    const targetId = (hasPublicationAutreBadge && idmembre) ? idmembre : user.idmembre;
+ @Get('me')
+@UseGuards(AuthGuard)
+@ApiOperation({
+  summary: 'Récupérer les publications pour l\'utilisateur connecté',
+  description: 'Permet de récupérer les publications avec filtres et pagination. Les utilisateurs avec le badge "publicationAutre" peuvent voir les publications d\'autres membres.'
+})
+@ApiOkResponse({
+  description: 'Liste des publications récupérée avec succès',
+  type: [PublicationEntity],
+})
+@ApiQuery({
+  name: 'statut',
+  required: false,
+  enum: Object.values(statut_publication_enum),
+  description: 'Filtrer par statut de publication',
+  example: statut_publication_enum.publie
+})
+@ApiQuery({
+  name: 'type',
+  required: false,
+  enum: Object.values(type_publication_enum),
+  description: 'Filtrer par type de publication',
+  example: type_publication_enum.POST
+})
+@ApiQuery({
+  name: 'idmembre',
+  required: false,
+  type: Number,
+  description: 'ID du membre pour voir ses publications (nécessite le badge publicationAutre)',
+  example: 123
+})
+@ApiQuery({
+  name: 'limit',
+  required: false,
+  type: Number,
+  description: 'Limite de résultats pour la pagination (défaut: 20)',
+  example: 10
+})
+@ApiQuery({
+  name: 'offset',
+  required: false,
+  type: Number,
+  description: 'Offset pour la pagination (défaut: 0)',
+  example: 0
+})
+async findForUser(
+  @UserPayload() user: any,
+  @Query('statut') statut?: statut_publication_enum,
+  @Query('type') type?: type_publication_enum,
+  @Query('idmembre') idmembre?: number,
+  @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
+) {
+  const hasPublicationAutreBadge = await this.service.checkPublicationAutreBadge(user.idmembre);
+  const targetId = (hasPublicationAutreBadge && idmembre) ? idmembre : user.idmembre;
 
-    return this.service.findForUser({
-      targetId,
-      statut,
-      type,
-      hasPublicationAutreBadge,
-      limit,
-      offset
-    });
-  }
+  return this.service.findForUser({
+    targetId,
+    statut,
+    type,
+    hasPublicationAutreBadge,
+    limit,
+    offset,
+    currentUserId: user.idmembre
+  });
+}
 
 
     @ApiOperation({ 
@@ -202,34 +203,43 @@ async checkPendingPublications() {
 
 
   @Get()
-  @ApiOperation({ 
-    summary: 'Récupérer toutes les publications',
-    description: 'Attention: Peut retourner beaucoup de données. Utiliser la pagination.' 
-  })
-  @ApiOkResponse({
-    description: 'Liste de toutes les publications',
-    type: [PublicationEntity],
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Limite de résultats pour la pagination (défaut: 20)',
-    example: 10
-  })
-  @ApiQuery({
-    name: 'offset',
-    required: false,
-    type: Number,
-    description: 'Offset pour la pagination (défaut: 0)',
-    example: 0
-  })
-  findAll(
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
-  ) {
-    return this.service.findAll(limit, offset);
-  }
+@ApiOperation({ 
+  summary: 'Récupérer toutes les publications',
+  description: 'Attention: Peut retourner beaucoup de données. Utiliser la pagination.' 
+})
+@ApiOkResponse({
+  description: 'Liste de toutes les publications',
+  type: [PublicationEntity],
+})
+@ApiQuery({
+  name: 'limit',
+  required: false,
+  type: Number,
+  description: 'Limite de résultats pour la pagination (défaut: 20)',
+  example: 10
+})
+@ApiQuery({
+  name: 'offset',
+  required: false,
+  type: Number,
+  description: 'Offset pour la pagination (défaut: 0)',
+  example: 0
+})
+@ApiQuery({
+  name: 'statut',
+  required: false,
+  type: String,
+  description: 'Filtrer par statut de publication',
+  example: 'active'
+})
+findAll(
+  @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
+  @Query('statut') statut?: string,
+) {
+  return this.service.findAll(limit, offset, statut as statut_publication_enum);
+}
+
 
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer une publication par son ID' })

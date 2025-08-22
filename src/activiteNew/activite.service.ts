@@ -113,74 +113,75 @@ export class ActiviteService {
   }
 
 
-     async getActivitesByAssemblee(
-    idassemblee: number,
-    limit: number,
-    offset: number
-  ) {
-    const now = new Date(); // Date actuelle pour filtrer les activités expirées
+async getActivitesByAssemblee(
+  idassemblee: number,
+  limit: number,
+  offset: number
+) {
+  const now = new Date(); // Date actuelle pour filtrer les activités expirées
 
-    try {
-      // Requête optimisée avec jointure directe
-      const [totalCount, activites] = await Promise.all([
-        this.prisma.activite_assemblee.count({
-          where: {
-            idassemblee,
-            activite: {
-              datefin: { gte: now }
-            }
+  try {
+    // Requête optimisée avec jointure directe
+    const [totalCount, activites] = await Promise.all([
+      this.prisma.activite_assemblee.count({
+        where: {
+          idassemblee,
+          activite: {
+            datefin: { gte: now }
           }
-        }),
-        
-        this.prisma.activite_assemblee.findMany({
-          where: {
-            idassemblee,
-            activite: {
-              datefin: { gte: now }
-            }
-          },
-          skip: offset,
-          take: limit,
-          orderBy: {
-            activite: {
-              datedebut: 'desc'
-            }
-          },
-          select: {
-            dateprevue: true,
-            activite: {
-              include: {
-                typeactivites: true
-              }
-            },
-            assemblee: true
+        }
+      }),
+      
+      this.prisma.activite_assemblee.findMany({
+        where: {
+          idassemblee,
+          activite: {
+            datefin: { gte: now }
           }
-        })
-      ]);
-
-      // Formatage des résultats
-      const formattedActivites = activites.map(item => ({
-        ...item.activite,
-        dateprevue: item.dateprevue,
-        assemblee: item.assemblee
-      }));
-
-      return {
-        data: formattedActivites,
-        pagination: {
-          total: totalCount,
-          limit,
-          offset,
-          hasMore: offset + limit < totalCount,
         },
-      };
-    } catch (error) {
-      console.error('Erreur lors de la récupération des activités:', error);
-      throw new InternalServerErrorException(
-        'Une erreur est survenue lors de la récupération des activités'
-      );
-    }
+        skip: offset,
+        take: limit,
+        orderBy: {
+          activite: {
+            createat: 'desc' // tri par date de création décroissante
+          }
+        },
+        select: {
+          dateprevue: true,
+          activite: {
+            include: {
+              typeactivites: true
+            }
+          },
+          assemblee: true
+        }
+      })
+    ]);
+
+    // Formatage des résultats
+    const formattedActivites = activites.map(item => ({
+      ...item.activite,
+      dateprevue: item.dateprevue,
+      assemblee: item.assemblee
+    }));
+
+    return {
+      data: formattedActivites,
+      pagination: {
+        total: totalCount,
+        limit,
+        offset,
+        hasMore: offset + limit < totalCount,
+      },
+    };
+  } catch (error) {
+    console.error('Erreur lors de la récupération des activités:', error);
+    throw new InternalServerErrorException(
+      'Une erreur est survenue lors de la récupération des activités'
+    );
   }
+}
+
 
   async getActivitesByDepartement(
     iddepartement: number,

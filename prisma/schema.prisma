@@ -113,6 +113,7 @@ model assemblee {
   departement        departement[]
   membre             membre[]
   profilassemblee    profilassemblee[]
+  cotisation cotisation[]
 
   @@index([nomassemble], map: "idx_assemblee_nom")
 }
@@ -268,8 +269,8 @@ model live {
   statutlive      statut_live_enum?
   titrelive       String?           @db.VarChar(255)
   descriptionlive String?
-  heuredebut      DateTime?         @db.Time(6)
-  heurefin        DateTime?         @db.Time(6)
+  heuredebut      DateTime?         
+  heurefin        DateTime?         
   idseance        Int?
   createat        DateTime          @default(now()) @db.Timestamp(6)
   updateat        DateTime          @default(now()) @db.Timestamp(6)
@@ -322,10 +323,43 @@ model membre {
   publication        publication[]
   publication_action publication_action[]
   consultation_annonce consultation_annonce[]
+  paiement paiement[] 
 
   @@index([codemembre], map: "idx_membre_code")
   @@index([idpersonne, idassemblee], map: "idx_membre_personne_assemblee")
   @@index([statutmembre], map: "idx_membre_statut")
+}
+
+
+model cotisation {
+  id          Int         @id @default(autoincrement())
+  titre       String
+  description String?
+  date_debut  DateTime
+  date_fin    DateTime
+  idassemblee Int
+  createat    DateTime    @default(now()) @db.Timestamp(6)
+  updateat    DateTime    @default(now()) @db.Timestamp(6)
+  assemblee   assemblee   @relation(fields: [idassemblee], references: [idassemblee], onDelete: Cascade, onUpdate: NoAction)
+  paiement    paiement[]
+
+  @@index([idassemblee], map: "idx_cotisation_assemblee")
+}
+
+model paiement {
+  id               Int         @id @default(autoincrement())
+  idmembre         Int
+  idcotisation     Int
+  montant          Decimal     @db.Decimal(10, 2)
+  code_transaction String?     @unique @db.VarChar(100)
+  statut           String      @db.VarChar(20)
+  createat         DateTime    @default(now()) @db.Timestamp(6)
+  membre           membre      @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
+  cotisation       cotisation  @relation(fields: [idcotisation], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([idmembre], map: "idx_paiement_membre")
+  @@index([idcotisation], map: "idx_paiement_cotisation")
+  @@unique([idmembre, idcotisation], map: "idx_paiement_membre_cotisation")
 }
 
 

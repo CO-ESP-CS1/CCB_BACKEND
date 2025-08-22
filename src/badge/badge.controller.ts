@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { BadgeService } from './badge.service';
 import { CreateBadgeDto } from './dto/create-badge.dto';
 import { UpdateBadgeDto } from './dto/update-badge.dto';
@@ -12,10 +12,15 @@ export class BadgeController {
     return this.service.create(data);
   }
 
-  @Get()
-  findAll() {
-    return this.service.findAll();
-  }
+ // badge.controller.ts
+@Get()
+findAll(
+  @Query('page') page: string = '1',
+  @Query('limit') limit: string = '10',
+) {
+  return this.service.findAll(Number(page), Number(limit));
+}
+
 
   @Get(':id')
   findOne(@Param('id') id: string) {
