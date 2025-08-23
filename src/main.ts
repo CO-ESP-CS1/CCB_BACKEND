@@ -2,11 +2,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AuthGuard } from './auth/auth.guard'; // Assure-toi que ce chemin est correct
+import { AuthGuard } from './auth/auth.guard';
 import { Reflector } from '@nestjs/core';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // ✅ Utilisez le port de Render ou 3000 en local
+  const port = process.env.PORT || 3000;
 
   // ✅ Validation globale
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -16,7 +19,7 @@ async function bootstrap() {
     .setTitle('Mon API')
     .setDescription("Documentation de l'API")
     .setVersion('1.0')
-    .addBearerAuth() // Ajoute la possibilité d'envoyer un JWT dans Swagger
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -26,6 +29,7 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new AuthGuard(reflector));
 
-  await app.listen(3000);
+  await app.listen(port);
+  console.log(`🚀 Server running on port ${port}`); // Log utile pour Render
 }
 bootstrap();
