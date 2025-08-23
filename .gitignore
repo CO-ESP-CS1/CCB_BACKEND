@@ -13,15 +13,7 @@ yarn-error.log*
 lerna-debug.log*
 
 
-# Fichiers compilés Prisma
-prisma/*.js
-prisma/*.d.ts
-prisma/*.js.map
-prisma/*.tsbuildinfo
 
-# Build info TypeScript
-tsconfig.build.tsbuildinfo
-*.tsbuildinfo
 # OS
 .DS_Store
 
