@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
 import { ArrondissementService } from './arrondissement.service';
 import { CreateArrondissementDto } from './dto/create-arrondissement.dto';
 import { UpdateArrondissementDto } from './dto/update-arrondissement.dto';
@@ -13,8 +13,14 @@ export class ArrondissementController {
   }
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 10;
+    const parsedOffset = offset ? parseInt(offset, 10) : 0;
+
+    return this.service.findAll(parsedLimit, parsedOffset);
   }
 
   @Get(':id')

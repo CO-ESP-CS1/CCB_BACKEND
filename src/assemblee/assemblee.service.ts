@@ -23,6 +23,12 @@ export class AssembleeService {
     });
   }
 
+
+  async getTotalAssemblees(): Promise<number> {
+  return this.prisma.assemblee.count();
+}
+
+
   async findAll(
     skip: number = this.DEFAULT_SKIP,
     take: number = this.DEFAULT_TAKE,

@@ -19,6 +19,63 @@ export class MembreService {
     });
   }
 
+
+  
+  
+async getMembreStatsByAssemblee(idassemblee: number) {
+  // Vérifier si l'assemblée existe (optionnel)
+  const assembleeExists = await this.prisma.assemblee.findUnique({
+    where: { idassemblee },
+  });
+  if (!assembleeExists) {
+    throw new NotFoundException(`Assemblée avec id ${idassemblee} non trouvée`);
+  }
+
+  // Total de membres pour cette assemblée
+  const total = await this.prisma.membre.count({
+    where: { idassemblee },
+  });
+
+  // Nouveaux membres des 7 derniers jours pour cette assemblée
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const nouveaux7jours = await this.prisma.membre.count({
+    where: {
+      idassemblee,
+      createat: {
+        gte: sevenDaysAgo,
+      },
+    },
+  });
+
+  return { idassemblee, total, nouveaux7jours };
+}
+
+
+async getMembreStats() {
+  const total = await this.prisma.membre.count();
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const nouveaux = await this.prisma.membre.count({
+    where: {
+      createat: {
+        gte: sevenDaysAgo,
+      },
+    },
+  });
+
+  return { total, nouveaux7jours: nouveaux };
+}
+
+
+
+
+
+
+
 async findAll(
   skip: number = this.DEFAULT_SKIP,
   take: number = this.DEFAULT_TAKE,

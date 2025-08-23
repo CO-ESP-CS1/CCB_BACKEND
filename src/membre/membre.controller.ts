@@ -61,6 +61,46 @@ export class MembreController {
     return this.membreService.create(dto);
   }
 
+
+
+  @Get('stats/assemblee/:idassemblee')
+@ApiOperation({ summary: 'Statistiques des membres par assemblée' })
+@ApiParam({ name: 'idassemblee', description: 'ID de l’assemblée', type: Number })
+@ApiOkResponse({
+  description: 'Nombre total et nouveaux membres pour une assemblée',
+  schema: {
+    example: {
+      idassemblee: 1,
+      total: 50,
+      nouveaux7jours: 3
+    }
+  }
+})
+@ApiNotFoundResponse({ description: 'Assemblée non trouvée' })
+getMembreStatsByAssemblee(@Param('idassemblee', ParseIntPipe) idassemblee: number) {
+  return this.membreService.getMembreStatsByAssemblee(idassemblee);
+}
+
+
+  @Get('stats/global')
+@ApiOperation({ summary: 'Statistiques globales des membres' })
+@ApiOkResponse({
+  description: 'Nombre total de membres et nouveaux membres des 7 derniers jours',
+  schema: {
+    example: {
+      total: 120,
+      nouveaux7jours: 5
+    }
+  }
+})
+getMembreStats() {
+  return this.membreService.getMembreStats();
+}
+
+
+
+
+
   @Get()
   @ApiOperation({ 
     summary: 'Lister tous les membres avec filtres',
@@ -121,6 +161,14 @@ export class MembreController {
       }
     }
   })
+
+
+
+
+
+
+
+
   findAll(
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number = 0,
     @Query('take', new DefaultValuePipe(10), ParseIntPipe) take: number = 10,

@@ -56,6 +56,35 @@ export class PublicationService {
     return !!memberBadge;
   }
 
+  async getPublicationCountByAssemblee(idassemblee: number) {
+  // Vérifier si l'assemblée existe
+  const assembleeExists = await this.prisma.assemblee.findUnique({
+    where: { idassemblee },
+  });
+
+  if (!assembleeExists) {
+    throw new NotFoundException(`Assemblée avec id ${idassemblee} non trouvée`);
+  }
+
+  // Compter toutes les publications des membres de cette assemblée
+  const totalPublications = await this.prisma.publication.count({
+    where: {
+      membre: {
+        idassemblee,
+      },
+    },
+  });
+
+  return { idassemblee, totalPublications };
+}
+
+
+
+  async getTotalPublications(): Promise<number> {
+  return this.prisma.publication.count();
+}
+
+
  async findForUser(params: {
   targetId: number;
   statut?: statut_publication_enum;

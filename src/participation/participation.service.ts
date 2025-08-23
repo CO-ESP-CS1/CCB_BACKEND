@@ -82,6 +82,135 @@ export class ParticipationService {
     }
   }
 
+async getParticipationStatsByAssemblee(idassemblee: number) {
+  // Vérifier que l'assemblée existe
+  const assembleeExists = await this.prisma.assemblee.findUnique({
+    where: { idassemblee },
+  });
+  if (!assembleeExists) {
+    throw new NotFoundException(`Assemblée ${idassemblee} introuvable`);
+  }
+
+  // Nombre total de membres dans cette assemblée (pour %)
+  const totalMembres = await this.prisma.membre.count({
+    where: { idassemblee },
+  });
+
+  // Participations des 7 derniers jours pour les membres de cette assemblée
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const participations = await this.prisma.participe.findMany({
+    where: {
+      createdAt: { gte: sevenDaysAgo },
+      membre: {
+        idassemblee,
+      },
+    },
+    select: { createdAt: true },
+  });
+
+  // Grouper par jour
+  const countsByDay: Record<string, number> = {};
+  participations.forEach((p) => {
+    const day = p.createdAt.toISOString().split("T")[0];
+    countsByDay[day] = (countsByDay[day] || 0) + 1;
+  });
+
+  // Construire les stats jour par jour
+  const dailyStats: {
+    date: string;
+    count: number;
+    percentage: number; // participation %
+    evolution: number | null;
+  }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date();
+    day.setDate(day.getDate() - i);
+    const key = day.toISOString().split("T")[0];
+
+    const count = countsByDay[key] || 0;
+    const percentage = totalMembres > 0 ? (count / totalMembres) * 100 : 0;
+
+    const prev = dailyStats.length > 0 ? dailyStats[dailyStats.length - 1].count : null;
+    let evolution: number | null = null;
+
+    if (prev !== null && prev > 0) {
+      evolution = ((count - prev) / prev) * 100;
+    } else if (prev !== null && prev === 0 && count > 0) {
+      evolution = 100;
+    }
+
+    dailyStats.push({ date: key, count, percentage, evolution });
+  }
+
+  return {
+    idassemblee,
+    totalMembres,
+    last7days: dailyStats,
+  };
+}
+
+
+
+  async getParticipationStats() {
+  // Date il y a 7 jours
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  // Récupérer toutes les participations des 7 derniers jours
+  const participations = await this.prisma.participe.findMany({
+    where: {
+      createdAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+
+  const total = participations.length;
+
+  // Grouper par jour (aaaa-mm-jj)
+  const countsByDay: Record<string, number> = {};
+  participations.forEach((p) => {
+    const day = p.createdAt.toISOString().split("T")[0];
+    countsByDay[day] = (countsByDay[day] || 0) + 1;
+  });
+
+  // Générer les 7 derniers jours avec pourcentage
+  const dailyStats: {
+    date: string;
+    count: number;
+    evolution: number | null; // % par rapport à la veille
+  }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date();
+    day.setDate(day.getDate() - i);
+    const key = day.toISOString().split("T")[0];
+
+    const count = countsByDay[key] || 0;
+    const prev = dailyStats.length > 0 ? dailyStats[dailyStats.length - 1].count : null;
+
+    let evolution: number | null = null;
+    if (prev !== null && prev > 0) {
+      evolution = ((count - prev) / prev) * 100;
+    } else if (prev !== null && prev === 0 && count > 0) {
+      evolution = 100; // tout nouveau jour avec des participations
+    }
+
+    dailyStats.push({ date: key, count, evolution });
+  }
+
+  return {
+    total,
+    last7days: dailyStats,
+  };
+}
+
   /**
    * Récupère les participations paginées pour une séance avec infos membre/personne/profil.
    * - limit: nombre d'éléments (take)

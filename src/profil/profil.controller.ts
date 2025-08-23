@@ -4,7 +4,7 @@ import {
   UseInterceptors, 
   UploadedFiles, 
   Body, 
-  BadRequestException, ParseIntPipe, Patch, Param 
+  BadRequestException, ParseIntPipe, Patch, Param ,Get
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProfilService } from './profil.service';
@@ -125,6 +125,12 @@ export class ProfilController {
     }
   }
 
+  @Get('personne/:idpersonne')
+  async getProfilPersonne(
+    @Param('idpersonne', ParseIntPipe) idpersonne: number,
+  ) {
+    return this.profilService.getProfilPersonneByIdPersonne(idpersonne);
+  }
 
 
   @Patch('personne/:id')

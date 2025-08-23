@@ -14,6 +14,13 @@ export class InteractionService {
     });
   }
 
+
+
+  async getTotalInteractions(): Promise<number> {
+  return this.prisma.interaction.count();
+}
+
+
   async findAll() {
     return this.prisma.interaction.findMany();
   }

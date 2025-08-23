@@ -17,6 +17,23 @@ export class InteractionController {
     return this.interactionService.create(dto);
   }
 
+
+  @Get('stats/total')
+@ApiOperation({ summary: 'Nombre total des interactions' })
+@ApiResponse({
+  status: 200,
+  schema: {
+    example: {
+      total: 128
+    }
+  }
+})
+async getTotalInteractions() {
+  const total = await this.interactionService.getTotalInteractions();
+  return { total };
+}
+
+
   @Get()
   @ApiOperation({ summary: 'Lister toutes les interactions' })
   @ApiResponse({ status: 200, type: [InteractionResponseDto] })

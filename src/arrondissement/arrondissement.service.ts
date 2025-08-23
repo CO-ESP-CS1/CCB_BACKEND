@@ -17,13 +17,20 @@ export class ArrondissementService {
     });
   }
 
-  findAll() {
-    return this.prisma.arrondissement.findMany({
-      include: { ville: true },
-    });
+  async findAll(limit = 10, offset = 0) {
+    const [data, total] = await Promise.all([
+      this.prisma.arrondissement.findMany({
+        include: { ville: true },
+        take: limit,      // nombre d’éléments à récupérer
+        skip: offset,     // décalage pour pagination
+      }),
+      this.prisma.arrondissement.count(), // total pour le frontend
+    ]);
+
+    return { data, total, limit, offset };
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     return this.prisma.arrondissement.findUnique({
       where: { idarrondissement: id },
       include: { ville: true },
@@ -32,18 +39,17 @@ export class ArrondissementService {
 
   async update(id: number, data: UpdateArrondissementDto) {
     await this.ensureExists(id);
-  
+
     const { idville, ...rest } = data;
-  
+
     return this.prisma.arrondissement.update({
       where: { idarrondissement: id },
       data: {
         ...rest,
         ville: idville ? { connect: { idville } } : undefined,
-      } as Prisma.arrondissementUpdateInput, // ✅ Assertion ici
+      } as Prisma.arrondissementUpdateInput,
     });
   }
-  
 
   async remove(id: number) {
     await this.ensureExists(id);

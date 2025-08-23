@@ -141,6 +141,30 @@ export class ProfilService {
     });
   }
 
+
+async getProfilPersonneByIdPersonne(idpersonne: number) {
+  // Vérifier que la personne existe
+  const personne = await this.prisma.personne.findUnique({
+    where: { idpersonne },
+  });
+
+  if (!personne) {
+    throw new NotFoundException(`Personne avec ID ${idpersonne} introuvable`);
+  }
+
+  // Récupérer le profil lié à cette personne
+  const profil = await this.prisma.profilpersonne.findUnique({
+    where: { idpersonne },
+  });
+
+  if (!profil) {
+    throw new NotFoundException(`Profil pour la personne ID ${idpersonne} introuvable`);
+  }
+
+  return profil;
+}
+
+
    async updatePersonneProfil(
     id: number,
     dto: UpdateProfilPersonneDto,

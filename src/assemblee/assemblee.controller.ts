@@ -182,6 +182,22 @@ export class AssembleeController {
     return this.assembleeService.create(data);
   }
 
+
+
+  @Get('stats/total')
+@ApiOperation({ summary: 'Nombre total des assemblées' })
+@ApiOkResponse({
+  description: 'Retourne le nombre total des assemblées',
+  schema: {
+    example: { total: 42 }
+  }
+})
+async getTotalAssemblees() {
+  const total = await this.assembleeService.getTotalAssemblees();
+  return { total };
+}
+
+
     @Public()
   @Get()
   @ApiOperation({ 

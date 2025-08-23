@@ -40,6 +40,47 @@ export class ParticipationController {
     return this.participationService.recordParticipation(dto, user.idmembre);
   }
 
+  @Get('stats/assemblee/:idassemblee')
+@ApiResponse({
+  status: 200,
+  description: 'Statistiques de participation pour une assemblée',
+  schema: {
+    example: {
+      idassemblee: 1,
+      totalMembres: 50,
+      last7days: [
+        { date: '2025-08-17', count: 5, percentage: 10, evolution: null },
+        { date: '2025-08-18', count: 8, percentage: 16, evolution: 60 },
+        { date: '2025-08-19', count: 6, percentage: 12, evolution: -25 }
+      ]
+    }
+  }
+})
+async getParticipationStatsByAssemblee(@Param('idassemblee', ParseIntPipe) idassemblee: number) {
+  return this.participationService.getParticipationStatsByAssemblee(idassemblee);
+}
+
+
+  @Get('stats/global')
+@ApiResponse({
+  status: 200,
+  description: 'Statistiques globales sur les participations (total et 7 derniers jours)',
+  schema: {
+    example: {
+      total: 200,
+      last7days: [
+        { date: '2025-08-17', count: 5, evolution: null },
+        { date: '2025-08-18', count: 8, evolution: 60 },
+        { date: '2025-08-19', count: 6, evolution: -25 },
+      ]
+    }
+  }
+})
+async getParticipationStats() {
+  return this.participationService.getParticipationStats();
+}
+
+
   /**
    * Récupère les participations pour une séance donnée (avec pagination).
    * Exemple: GET /participations/seance/5?limit=20&offset=40

@@ -110,6 +110,45 @@ export class PublicationController {
     return this.service.create(dto);
   }
 
+
+  @Get('stats/assemblee/:idassemblee')
+@ApiOperation({ summary: 'Nombre de publications des membres d’une assemblée' })
+@ApiParam({ name: 'idassemblee', description: 'ID de l’assemblée', type: Number })
+@ApiOkResponse({
+  description: 'Retourne le nombre total de publications pour une assemblée',
+  schema: {
+    example: {
+      idassemblee: 1,
+      totalPublications: 25
+    }
+  }
+})
+@ApiNotFoundResponse({ description: 'Assemblée non trouvée' })
+async getPublicationCountByAssemblee(@Param('idassemblee', ParseIntPipe) idassemblee: number) {
+  return this.service.getPublicationCountByAssemblee(idassemblee);
+}
+
+
+
+@Get('stats/total')
+@ApiOperation({ summary: 'Nombre total de publications' })
+@ApiOkResponse({
+  description: 'Retourne uniquement le nombre total de publications',
+  schema: {
+    example: {
+      total: 42
+    }
+  }
+})
+async getTotalPublications() {
+  const total = await this.service.getTotalPublications();
+  return { total };
+}
+
+
+
+
+
  @Get('me')
 @UseGuards(AuthGuard)
 @ApiOperation({

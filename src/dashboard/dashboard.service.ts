@@ -31,20 +31,21 @@ export class DashboardService {
   }
 
   async hasLiveEnCours(): Promise<boolean> {
-    const lives = await this.prisma.live.findMany({
-      select: { heuredebut: true, heurefin: true },
-    });
+  const lives = await this.prisma.live.findMany({
+    select: { heuredebut: true, heurefin: true },
+  });
 
-    const now = this.nowSeconds();
+  const now = new Date();
 
-    return lives.some((l) => {
-      const start = this.timeToSeconds(l.heuredebut as any);
-      const end = this.timeToSeconds(l.heurefin as any);
-      if (start == null || end == null) return false;
-      if (start <= end) return now >= start && now <= end;
-      return now >= start || now <= end;
-    });
-  }
+  return lives.some((l) => {
+    const start = l.heuredebut;
+    const end = l.heurefin;
+    if (!start || !end) return false;
+
+    return now >= start && now <= end;
+  });
+}
+
 
 async hasUnreadTargetedAnnouncement(
   memberId: number,

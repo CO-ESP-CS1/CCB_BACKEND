@@ -395,6 +395,8 @@ model participe {
   membre   membre @relation(fields: [idmembre], references: [idmembre], onDelete: Cascade, onUpdate: NoAction)
   seance   seance @relation(fields: [idseance], references: [idseance], onDelete: Cascade, onUpdate: NoAction)
 
+
+createdAt DateTime @default(now())
   @@id([idmembre, idseance])
 }
 
@@ -472,7 +474,7 @@ model profilpersonne {
   adresse          String?
   photourl         String?
   couvertureurl    String?
-  idpersonne       Int
+  idpersonne       Int      @unique
   createat         DateTime @default(now()) @db.Timestamp(6)
   updateat         DateTime @default(now()) @db.Timestamp(6)
   personne         personne @relation(fields: [idpersonne], references: [idpersonne], onDelete: Cascade, onUpdate: NoAction)

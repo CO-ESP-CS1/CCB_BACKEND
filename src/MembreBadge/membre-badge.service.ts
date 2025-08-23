@@ -152,5 +152,52 @@ export class BadgeService {
   }
 
 
+  async removeBadgeFromMembre(codemembre: string, nombadge: string) {
+  // Vérifier que le membre existe
+  const membre = await this.prisma.membre.findUnique({
+    where: { codemembre },
+  });
+
+  if (!membre) {
+    throw new NotFoundException(`Membre avec code matricule '${codemembre}' introuvable`);
+  }
+
+  // Vérifier que le badge existe
+  const badge = await this.prisma.badge.findFirst({
+    where: { nombadge },
+  });
+
+  if (!badge) {
+    throw new NotFoundException(`Badge '${nombadge}' introuvable`);
+  }
+
+  // Vérifier si l'association existe
+  const assignment = await this.prisma.membre_badge.findUnique({
+    where: {
+      idmembre_idbadge: {
+        idmembre: membre.idmembre,
+        idbadge: badge.idbadge,
+      },
+    },
+  });
+
+  if (!assignment) {
+    throw new NotFoundException(
+      `Le membre '${codemembre}' ne possède pas le badge '${nombadge}'`
+    );
+  }
+
+  // Supprimer la liaison
+  return this.prisma.membre_badge.delete({
+    where: {
+      idmembre_idbadge: {
+        idmembre: membre.idmembre,
+        idbadge: badge.idbadge,
+      },
+    },
+  });
+}
+
+
   
 }

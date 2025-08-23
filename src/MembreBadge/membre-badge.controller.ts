@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, BadRequestException, Get, ParseIntPipe, Param, Query , DefaultValuePipe} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, BadRequestException, Get, ParseIntPipe, Param, Query , DefaultValuePipe, Delete} from '@nestjs/common';
 import { BadgeService } from './membre-badge.service';
 import { AssignBadgeDto } from './dto/assign-role.dto';
 import { ApiBearerAuth, ApiBody, ApiResponse, ApiTags, ApiOperation, ApiParam, ApiOkResponse, ApiNotFoundResponse, ApiQuery } from '@nestjs/swagger';
@@ -63,4 +63,19 @@ export class BadgeController {
     // limit peut être null (pas de limite)
     return this.badgeService.getBadgesByMembreId(idmembre, limit, offset);
   }
+
+
+
+  @Delete('remove/:codemembre/:nombadge')
+@ApiOperation({ summary: "Supprimer un badge d'un membre (via code matricule et nom de badge)" })
+@ApiParam({ name: 'codemembre', description: "Code matricule du membre", type: String, example: "M12345" })
+@ApiParam({ name: 'nombadge', description: "Nom du badge", type: String, example: "participationControl" })
+@ApiOkResponse({ description: "Badge supprimé avec succès de la table pivot" })
+@ApiNotFoundResponse({ description: "Membre, badge ou association introuvable" })
+async removeBadge(
+  @Param('codemembre') codemembre: string,
+  @Param('nombadge') nombadge: string,
+) {
+  return this.badgeService.removeBadgeFromMembre(codemembre, nombadge);
+}
 }
