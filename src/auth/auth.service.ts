@@ -254,7 +254,7 @@ export class AuthService {
         },
       };
 
-      const access_token = this.jwtService.sign(payload, { expiresIn: '30d' });
+      const access_token = this.jwtService.sign(payload, { expiresIn: '90d' });
 
       // 8. Retourner token + payload complet pour le front
       return {
