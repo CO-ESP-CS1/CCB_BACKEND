@@ -16,12 +16,15 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(imagePathOrBuffer: string | Buffer): Promise<{ secure_url: string; public_id: string }> {
+  async uploadImage(
+    imagePathOrBuffer: string | Buffer,
+    folder = 'publications',
+  ): Promise<{ secure_url: string; public_id: string }> {
     return new Promise((resolve, reject) => {
       if (typeof imagePathOrBuffer === 'string') {
         cloudinary.uploader.upload(
           imagePathOrBuffer, 
-          { folder: 'publications' },
+          { folder },
           (error, result) => {
             if (error) return reject(error);
             if (!result) return reject(new Error('Upload failed'));
@@ -33,7 +36,7 @@ export class CloudinaryService {
         );
       } else {
         const stream = cloudinary.uploader.upload_stream(
-          { folder: 'publications' },
+          { folder },
           (error, result) => {
             if (error) return reject(error);
             if (!result) return reject(new Error('Upload failed'));

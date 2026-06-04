@@ -191,6 +191,24 @@ getMembreStats() {
     }
   }
 
+  @Get('me/profile')
+  @ApiOperation({ summary: 'Profil du membre connecté' })
+  async getMyProfile(@UserPayload('idmembre') idmembreFromToken: number | string) {
+    if (!idmembreFromToken) {
+      throw new UnauthorizedException('idmembre absent du token');
+    }
+
+    const idmembre = typeof idmembreFromToken === 'string'
+      ? parseInt(idmembreFromToken, 10)
+      : idmembreFromToken;
+
+    if (!idmembre || Number.isNaN(idmembre)) {
+      throw new UnauthorizedException('idmembre invalide dans le token');
+    }
+
+    return this.membreService.getProfileByMembreId(Number(idmembre));
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer un membre par ID' })
   @ApiParam({ name: 'id', description: 'ID du membre', type: Number })
@@ -220,23 +238,5 @@ getMembreStats() {
   @ApiNotFoundResponse({ description: 'Membre non trouvé' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.membreService.remove(id);
-  }
-
-
-    @Get('me/profile')
-  async getMyProfile(@UserPayload('idmembre') idmembreFromToken: number | string) {
-    if (!idmembreFromToken) {
-      throw new UnauthorizedException('idmembre absent du token');
-    }
-
-    const idmembre = typeof idmembreFromToken === 'string'
-      ? parseInt(idmembreFromToken, 10)
-      : idmembreFromToken;
-
-    if (!idmembre || Number.isNaN(idmembre)) {
-      throw new UnauthorizedException('idmembre invalide dans le token');
-    }
-
-    return this.membreService.getProfileByMembreId(Number(idmembre));
   }
 }

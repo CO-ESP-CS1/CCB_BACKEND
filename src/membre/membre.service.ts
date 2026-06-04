@@ -217,6 +217,16 @@ async findAll(
     const membre = await this.prisma.membre.findUnique({
       where: { idmembre },
       include: {
+        assemblee: {
+          select: { idassemblee: true, nomassemble: true, zone: true },
+        },
+        est: {
+          include: {
+            departement: {
+              select: { iddepartement: true, nomdepartement: true },
+            },
+          },
+        },
         personne: {
           include: {
             profilpersonne: true, // récupère le tableau

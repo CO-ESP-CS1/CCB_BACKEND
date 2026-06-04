@@ -1,0 +1,51 @@
+{
+  "updatedAt": "2026-06-04T07:09:04.244Z",
+  "slides": [
+    {
+      "id": "1",
+      "title": "VOS CULTES EN DIRECT ET EN DIFFÉRÉ",
+      "subtitle": "Regardez vos cultes et activités en direct",
+      "slideName": "Culte du Dimanche",
+      "detailDescription": "Retrouvez ici les cultes en direct et en replay de votre assemblée. Rejoignez la communauté en ligne pour vivre la louange, la parole et la communion, où que vous soyez. Les horaires et liens de diffusion sont communiqués chaque semaine.",
+      "fallbackKey": "banner1",
+      "linkRoute": "/live",
+      "linkLabel": "Voir les lives",
+      "active": true,
+      "order": 1
+    },
+    {
+      "id": "2",
+      "title": "SOIRÉES DE PRIÈRE",
+      "subtitle": "Participez aux veillées de prière en live",
+      "slideName": "Veillée de Prière",
+      "detailDescription": "Les veillées de prière sont des moments privilégiés pour intercéder, louer et chercher la présence de Dieu ensemble. Consultez les prochaines dates, le thème de la soirée et participez depuis l'application ou sur place.",
+      "fallbackKey": "banner2",
+      "linkRoute": "/live",
+      "linkLabel": "Rejoindre la veillée",
+      "active": true,
+      "order": 2
+    },
+    {
+      "id": "3",
+      "title": "ENSEIGNEMENTS BIBLIQUES",
+      "subtitle": "Approfondissez votre foi avec nos enseignements",
+      "slideName": "Étude Biblique",
+      "detailDescription": "Accédez aux enseignements bibliques publiés par la CCB pour grandir dans la foi. Idéal pour préparer un groupe, une cellule ou votre méditation personnelle. Retrouvez les vidéos, notes et ressources associées.",
+      "fallbackKey": "banner3",
+      "linkRoute": "/live",
+      "linkLabel": "Voir les enseignements",
+      "active": true,
+      "order": 3
+    },
+    {
+      "id": "slide-1780556821046-4",
+      "title": "CONVENTION DES MAMANS",
+      "subtitle": "Découvrez la convention des mamans bientôt sur votre écran",
+      "slideName": "CONVENTION",
+      "detailDescription": "La Convention des Mamans est un temps fort de partage, d'enseignement et de communion réservé aux femmes de l'assemblée. Programme, inscriptions et informations pratiques seront publiés ici dès l'ouverture des inscriptions.",
+      "imageUrl": "https://res.cloudinary.com/dsx40osui/image/upload/v1780556941/home-carousel/c5yugpryik4vo38s2v7y.jpg",
+      "active": true,
+      "order": 4
+    }
+  ]
+}

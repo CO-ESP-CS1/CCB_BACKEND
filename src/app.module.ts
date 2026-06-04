@@ -59,6 +59,8 @@ import { DepartmentMembershipModule } from './department-membership/department-m
 import { ConsultationAnnonceModule } from './consultation-annonce/consultation-annonce.module';
 import { CotisationModule } from './cotisation/cotisation.module';
 import { PaiementModule } from './paiement/paiement.module';
+import { UserPortalModule } from './user-portal/user-portal.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [
@@ -66,7 +68,7 @@ import { PaiementModule } from './paiement/paiement.module';
       isGlobal: true,
       
     }),
-    PrismaModule, ActiviteModule, ActiviteAssembleeModule, AnnonceModule, AnnonceAssembleeModule, AnnonceDepartementModule, ArrondissementModule, AssembleeModule, AssembleePlanningModule, BadgeModule, CodeRecuperationModule, ConnexionModule, DepartementModule, DirigeModule, EstModule, InscriptionModule, InteractionModule, IntervenantModule, LiveModule, LoginHistoryModule, MembreModule, MembreBadgeModule, ParticipeModule, PersonneModule, PaysModule, PlanningModule, ProfilassembleeModule, ProfilDepartementModule, ProfilPersonneModule, PublicationModule, PublicationActionModule, ResponsabiliteModule, SeanceModule, SessionModule, TypeactivitesModule, TypeannonceModule, TyperesponsabiliteModule, VilleModule, AuthModule, RecuperationModule, RegenerationModule, DashboardModule, MembreModulePersonne, PublicationNewModule, LiveNewModule, ActiviteNewModule, ActiviteAssembleeModuleNew, AnnonceNewModule, InteractionNewModule, PublicationActionNewModule, ParticipationModule, MembreBadgeNewModule, ProfilModule, MembreConnexionModule, BadgeNewModule, DepartmentMembershipModule, ConsultationAnnonceModule, CotisationModule, PaiementModule
+    PrismaModule, ActiviteModule, ActiviteAssembleeModule, AnnonceModule, AnnonceAssembleeModule, AnnonceDepartementModule, ArrondissementModule, AssembleeModule, AssembleePlanningModule, BadgeModule, CodeRecuperationModule, ConnexionModule, DepartementModule, DirigeModule, EstModule, InscriptionModule, InteractionModule, IntervenantModule, LiveModule, LoginHistoryModule, MembreModule, MembreBadgeModule, ParticipeModule, PersonneModule, PaysModule, PlanningModule, ProfilassembleeModule, ProfilDepartementModule, ProfilPersonneModule, PublicationModule, PublicationActionModule, ResponsabiliteModule, SeanceModule, SessionModule, TypeactivitesModule, TypeannonceModule, TyperesponsabiliteModule, VilleModule, AuthModule, RecuperationModule, RegenerationModule, DashboardModule, MembreModulePersonne, PublicationNewModule, LiveNewModule, ActiviteNewModule, ActiviteAssembleeModuleNew, AnnonceNewModule, InteractionNewModule, PublicationActionNewModule, ParticipationModule, MembreBadgeNewModule, ProfilModule, MembreConnexionModule, BadgeNewModule, DepartmentMembershipModule, ConsultationAnnonceModule, CotisationModule,     PaiementModule, UserPortalModule, ConversationsModule
   ],
 })
 export class AppModule {}

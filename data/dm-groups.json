@@ -1,0 +1,27 @@
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "1er groupe",
+      "idassemblee": 2,
+      "memberIds": [
+        128,
+        37,
+        31,
+        52,
+        57,
+        98,
+        2,
+        28,
+        101,
+        55,
+        34,
+        17
+      ],
+      "createdBy": 128,
+      "createdAt": "2026-06-04T10:12:26.194Z",
+      "photoUrl": "https://res.cloudinary.com/dsx40osui/image/upload/v1780576399/ccb-dm-groups/ftlf8ejpa9pgbtxpqvny.jpg"
+    }
+  ],
+  "updatedAt": "2026-06-04T12:40:10.185Z"
+}
