@@ -16,7 +16,9 @@ import {
   AttendanceRecord,
   FinanceEntry,
   FinancePost,
+  FormationItem,
 } from './assembly-local.types';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateEvangelizationSoulDto } from './dto/create-evangelization-soul.dto';
 import { CreateDepartmentHelperDto } from './dto/create-department-helper.dto';
 import { SaveAttendanceDto } from './dto/save-attendance.dto';
@@ -34,7 +36,10 @@ const MANAGER_BADGES = [
 
 @Injectable()
 export class AssemblyLocalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   private getFilePath(idassemblee: number): string {
     const base =
@@ -59,6 +64,7 @@ export class AssemblyLocalService {
           ...e,
           postId: e.postId ?? null,
         })),
+        formations: parsed.formations ?? [],
       };
     } catch {
       return { ...EMPTY_ASSEMBLY_LOCAL };
@@ -101,6 +107,15 @@ export class AssemblyLocalService {
     throw new ForbiddenException(
       'Accès réservé aux gestionnaires de l\'assemblée.',
     );
+  }
+
+  assertAssemblyMember(idassemblee?: number | null): number {
+    if (!idassemblee) {
+      throw new ForbiddenException(
+        'Votre compte n\'est associé à aucune assemblée.',
+      );
+    }
+    return idassemblee;
   }
 
   async listSouls(memberId: number, idassemblee?: number | null) {
@@ -219,6 +234,7 @@ export class AssemblyLocalService {
       attendanceRecords: records,
       financePosts: data.financePosts,
       financeEntries: data.financeEntries,
+      formations: data.formations,
     };
   }
 
@@ -515,5 +531,100 @@ export class AssemblyLocalService {
 
     await this.writeFile(assemblyId, data);
     return record;
+  }
+
+  async listFormations(memberId: number, idassemblee?: number | null) {
+    const assemblyId = this.assertAssemblyMember(idassemblee);
+    const data = await this.readFile(assemblyId);
+    const formations = [...data.formations].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+    return { count: formations.length, formations };
+  }
+
+  async getFormation(
+    memberId: number,
+    idassemblee: number | null | undefined,
+    formationId: string,
+  ) {
+    const assemblyId = this.assertAssemblyMember(idassemblee);
+    const data = await this.readFile(assemblyId);
+    const formation = data.formations.find((f) => f.id === formationId);
+    if (!formation) {
+      throw new NotFoundException('Formation introuvable.');
+    }
+    return formation;
+  }
+
+  async createFormation(
+    memberId: number,
+    idassemblee: number | null | undefined,
+    titre: string,
+    description: string,
+    file: Express.Multer.File,
+  ) {
+    const assemblyId = await this.assertCanManageAssembly(memberId, idassemblee);
+    if (!titre?.trim()) {
+      throw new BadRequestException('Le titre est requis.');
+    }
+    if (!description?.trim()) {
+      throw new BadRequestException('La description est requise.');
+    }
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Fichier PDF requis.');
+    }
+    const mime = (file.mimetype || '').toLowerCase();
+    const name = (file.originalname || '').toLowerCase();
+    if (mime !== 'application/pdf' && !name.endsWith('.pdf')) {
+      throw new BadRequestException('Seuls les fichiers PDF sont acceptés.');
+    }
+
+    const uploaded = await this.cloudinaryService.uploadPdf(
+      file.buffer,
+      `assembly-formations/${assemblyId}`,
+      file.originalname || 'formation.pdf',
+    );
+
+    const data = await this.readFile(assemblyId);
+    const now = new Date().toISOString();
+    const formation: FormationItem = {
+      id: randomUUID(),
+      titre: titre.trim(),
+      description: description.trim(),
+      pdfUrl: uploaded.secure_url,
+      pdfViewUrl: uploaded.view_url,
+      pdfPublicId: uploaded.public_id,
+      originalFilename: file.originalname || 'formation.pdf',
+      createdAt: now,
+      updatedAt: now,
+    };
+    data.formations.unshift(formation);
+    await this.writeFile(assemblyId, data);
+    return formation;
+  }
+
+  async deleteFormation(
+    memberId: number,
+    idassemblee: number | null | undefined,
+    formationId: string,
+  ) {
+    const assemblyId = await this.assertCanManageAssembly(memberId, idassemblee);
+    const data = await this.readFile(assemblyId);
+    const target = data.formations.find((f) => f.id === formationId);
+    if (!target) {
+      throw new NotFoundException('Formation introuvable.');
+    }
+
+    if (target.pdfPublicId) {
+      try {
+        await this.cloudinaryService.deleteRawAsset(target.pdfPublicId);
+      } catch {
+        // fichier Cloudinary déjà absent
+      }
+    }
+
+    data.formations = data.formations.filter((f) => f.id !== formationId);
+    await this.writeFile(assemblyId, data);
+    return { success: true };
   }
 }

@@ -7,9 +7,21 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserPayload } from '../auth/user-payload.decorator';
 import { AssemblyLocalService } from './assembly-local.service';
@@ -20,6 +32,7 @@ import { CreateFinanceDto } from './dto/create-finance.dto';
 import { UpdateFinanceDto } from './dto/update-finance.dto';
 import { CreateFinancePostDto } from './dto/create-finance-post.dto';
 import { UpdateFinancePostDto } from './dto/update-finance-post.dto';
+import { CreateFormationDto } from './dto/create-formation.dto';
 
 @ApiTags('Assembly Local')
 @ApiBearerAuth()
@@ -185,5 +198,79 @@ export class AssemblyLocalController {
     @Param('id') entryId: string,
   ) {
     return this.service.deleteFinance(memberId, idassemblee, entryId);
+  }
+
+  @Get('formations')
+  @ApiOperation({ summary: 'Lister les formations de mon assemblée' })
+  listFormations(
+    @UserPayload('idmembre') memberId: number,
+    @UserPayload('idassemblee') idassemblee: number,
+  ) {
+    return this.service.listFormations(memberId, idassemblee);
+  }
+
+  @Get('formations/:id')
+  @ApiOperation({ summary: 'Détail d\'une formation' })
+  getFormation(
+    @UserPayload('idmembre') memberId: number,
+    @UserPayload('idassemblee') idassemblee: number,
+    @Param('id') formationId: string,
+  ) {
+    return this.service.getFormation(memberId, idassemblee, formationId);
+  }
+
+  @Post('formations')
+  @ApiOperation({ summary: 'Publier une formation (PDF + titre + description)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['titre', 'description', 'pdf'],
+      properties: {
+        titre: { type: 'string' },
+        description: { type: 'string' },
+        pdf: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('pdf', {
+      storage: memoryStorage(),
+      limits: { fileSize: 20 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const mime = (file.mimetype || '').toLowerCase();
+        const name = (file.originalname || '').toLowerCase();
+        if (mime === 'application/pdf' || name.endsWith('.pdf')) {
+          cb(null, true);
+        } else {
+          cb(new Error('Seuls les fichiers PDF sont acceptés'), false);
+        }
+      },
+    }),
+  )
+  @UsePipes(new ValidationPipe({ transform: true }))
+  createFormation(
+    @UserPayload('idmembre') memberId: number,
+    @UserPayload('idassemblee') idassemblee: number,
+    @Body() dto: CreateFormationDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.createFormation(
+      memberId,
+      idassemblee,
+      dto.titre,
+      dto.description,
+      file,
+    );
+  }
+
+  @Delete('formations/:id')
+  @ApiOperation({ summary: 'Supprimer une formation' })
+  deleteFormation(
+    @UserPayload('idmembre') memberId: number,
+    @UserPayload('idassemblee') idassemblee: number,
+    @Param('id') formationId: string,
+  ) {
+    return this.service.deleteFormation(memberId, idassemblee, formationId);
   }
 }

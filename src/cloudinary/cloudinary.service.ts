@@ -2,7 +2,12 @@
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
-import { ConfigService } from '@nestjs/config'; // Ajout important
+import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
+
+function randomToken(): string {
+  return randomUUID().replace(/-/g, '').slice(0, 16);
+}
 
 @Injectable()
 export class CloudinaryService {
@@ -52,6 +57,54 @@ export class CloudinaryService {
         bufferStream.pipe(stream);
       }
     });
+  }
+
+  async uploadPdf(
+    pdfBuffer: Buffer,
+    folder = 'assembly-formations',
+    filename = 'formation.pdf',
+  ): Promise<{ secure_url: string; public_id: string; view_url: string }> {
+    const safeFilename = filename.toLowerCase().endsWith('.pdf')
+      ? filename
+      : `${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}.pdf`;
+    const publicId = randomToken();
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'raw',
+          folder,
+          public_id: publicId,
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error('PDF upload failed'));
+
+          const viewUrl = result.secure_url;
+
+          const downloadUrl = cloudinary.url(result.public_id, {
+            resource_type: 'raw',
+            secure: true,
+            flags: `attachment:${safeFilename}`,
+          });
+
+          resolve({
+            secure_url: downloadUrl,
+            public_id: result.public_id,
+            view_url: viewUrl,
+          });
+        },
+      );
+
+      const bufferStream = new Readable();
+      bufferStream.push(pdfBuffer);
+      bufferStream.push(null);
+      bufferStream.pipe(uploadStream);
+    });
+  }
+
+  async deleteRawAsset(publicId: string): Promise<void> {
+    await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
   }
 
   async uploadAudio(audioBuffer: Buffer): Promise<{ secure_url: string; public_id: string }> {

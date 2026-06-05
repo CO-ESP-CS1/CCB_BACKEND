@@ -44,6 +44,18 @@ export type FinanceEntry = {
   updatedAt: string;
 };
 
+export type FormationItem = {
+  id: string;
+  titre: string;
+  description: string;
+  pdfUrl: string;
+  pdfViewUrl: string;
+  pdfPublicId: string;
+  originalFilename: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AssemblyLocalFile = {
   updatedAt: string;
   evangelizationSouls: EvangelizationSoul[];
@@ -51,6 +63,7 @@ export type AssemblyLocalFile = {
   attendanceRecords: AttendanceRecord[];
   financePosts: FinancePost[];
   financeEntries: FinanceEntry[];
+  formations: FormationItem[];
 };
 
 export const EMPTY_ASSEMBLY_LOCAL: AssemblyLocalFile = {
@@ -60,4 +73,5 @@ export const EMPTY_ASSEMBLY_LOCAL: AssemblyLocalFile = {
   attendanceRecords: [],
   financePosts: [],
   financeEntries: [],
+  formations: [],
 };
