@@ -35,6 +35,7 @@ import {
 type MemberPerson = {
   idmembre: number;
   role: string;
+  assemblee?: { nomassemble: string | null } | null;
   personne: {
     nom: string;
     prenom: string;
@@ -55,6 +56,7 @@ export class ConversationsService {
 
   private memberInclude() {
     return {
+      assemblee: { select: { nomassemble: true } },
       personne: {
         include: {
           profilpersonne: { select: { photourl: true }, take: 1 },
@@ -82,6 +84,7 @@ export class ConversationsService {
       telephone: m.personne.telephone ?? null,
       role: m.role,
       departements,
+      assembleeName: m.assemblee?.nomassemble ?? null,
     };
   }
 
@@ -94,24 +97,18 @@ export class ConversationsService {
     return me.idassemblee;
   }
 
-  private async assertSameAssemblee(myId: number, partnerId: number) {
+  private async assertCanMessagePartner(myId: number, partnerId: number) {
     if (myId === partnerId) {
       throw new BadRequestException('Impossible de vous envoyer un message');
     }
-    const [me, partner] = await Promise.all([
-      this.prisma.membre.findUnique({
-        where: { idmembre: myId },
-        select: { idassemblee: true },
-      }),
-      this.prisma.membre.findUnique({
-        where: { idmembre: partnerId },
-        select: { idassemblee: true },
-      }),
-    ]);
-    if (!me || !partner) throw new NotFoundException('Membre introuvable');
-    if (partner.idassemblee !== me.idassemblee) {
+    const partner = await this.prisma.membre.findUnique({
+      where: { idmembre: partnerId },
+      select: { statutmembre: true },
+    });
+    if (!partner) throw new NotFoundException('Membre introuvable');
+    if (partner.statutmembre !== 'actif') {
       throw new ForbiddenException(
-        'Messagerie limitée aux membres de votre assemblée',
+        'Ce membre n\'est pas actif dans la communauté',
       );
     }
   }
@@ -274,18 +271,15 @@ export class ConversationsService {
     );
   }
 
-  private async getGroupsForMember(idmembre: number, idassemblee: number) {
+  private async getGroupsForMember(idmembre: number) {
     const file = await readDmGroupsFile();
     return file.groups.filter(
-      (g) =>
-        g.idassemblee === idassemblee &&
-        (g.memberIds.includes(idmembre) || g.createdBy === idmembre),
+      (g) => g.memberIds.includes(idmembre) || g.createdBy === idmembre,
     );
   }
 
   private async assertGroupMember(idmembre: number, groupId: number) {
-    const idassemblee = await this.getMyAssemblee(idmembre);
-    const groups = await this.getGroupsForMember(idmembre, idassemblee);
+    const groups = await this.getGroupsForMember(idmembre);
     const group = groups.find((g) => g.id === groupId);
     if (!group) {
       throw new ForbiddenException('Groupe introuvable ou accès refusé');
@@ -308,7 +302,7 @@ export class ConversationsService {
   }
 
   async hideDirectConversation(idmembre: number, partnerId: number) {
-    await this.assertSameAssemblee(idmembre, partnerId);
+    await this.assertCanMessagePartner(idmembre, partnerId);
     const existing = await this.prisma.interaction.findFirst({
       where: {
         type: DM_RECEIPT_TYPE,
@@ -332,7 +326,6 @@ export class ConversationsService {
   }
 
   async listThreads(idmembre: number) {
-    const idassemblee = await this.getMyAssemblee(idmembre);
     const hidden = await this.getHiddenPartnerIds(idmembre);
 
     const rows = await this.prisma.interaction.findMany({
@@ -390,7 +383,7 @@ export class ConversationsService {
       })
       .filter(Boolean);
 
-    const myGroups = await this.getGroupsForMember(idmembre, idassemblee);
+    const myGroups = await this.getGroupsForMember(idmembre);
     const groupRows = await this.prisma.interaction.findMany({
       where: {
         ressourcetype: DM_GROUP_RESOURCE_TYPE,
@@ -451,7 +444,7 @@ export class ConversationsService {
     limit = 50,
     offset = 0,
   ) {
-    await this.assertSameAssemblee(idmembre, partnerId);
+    await this.assertCanMessagePartner(idmembre, partnerId);
     const take = Math.min(Math.max(limit, 1), 100);
     const skip = Math.max(offset, 0);
 
@@ -518,7 +511,7 @@ export class ConversationsService {
   }
 
   async markRead(idmembre: number, partnerId: number, lastMessageId: number) {
-    await this.assertSameAssemblee(idmembre, partnerId);
+    await this.assertCanMessagePartner(idmembre, partnerId);
     await this.recordReceipt(
       idmembre,
       partnerId,
@@ -562,7 +555,7 @@ export class ConversationsService {
         `Message trop long (max ${DM_MAX_CONTENT_LENGTH} caractères)`,
       );
     }
-    await this.assertSameAssemblee(idmembre, partnerId);
+    await this.assertCanMessagePartner(idmembre, partnerId);
 
     const created = await this.prisma.interaction.create({
       data: {
@@ -650,12 +643,11 @@ export class ConversationsService {
   }
 
   async listContacts(idmembre: number, search?: string) {
-    const idassemblee = await this.getMyAssemblee(idmembre);
     const q = search?.trim();
     const members = await this.prisma.membre.findMany({
       where: {
-        idassemblee,
         idmembre: { not: idmembre },
+        statutmembre: 'actif',
         ...(q
           ? {
               personne: {
@@ -669,7 +661,7 @@ export class ConversationsService {
       },
       include: this.memberInclude(),
       orderBy: [{ personne: { prenom: 'asc' } }],
-      take: 60,
+      take: 100,
     });
     const contacts = members
       .map((m) => {
@@ -681,8 +673,7 @@ export class ConversationsService {
   }
 
   async listGroups(idmembre: number) {
-    const idassemblee = await this.getMyAssemblee(idmembre);
-    const groups = await this.getGroupsForMember(idmembre, idassemblee);
+    const groups = await this.getGroupsForMember(idmembre);
     return { groups };
   }
 
@@ -703,12 +694,12 @@ export class ConversationsService {
     }
 
     for (const mid of uniqueIds) {
-      await this.assertSameAssemblee(idmembre, mid);
+      await this.assertCanMessagePartner(idmembre, mid);
     }
 
     const file = await readDmGroupsFile();
-    if (file.groups.filter((g) => g.idassemblee === idassemblee).length >= DM_GROUPS_MAX) {
-      throw new BadRequestException('Limite de groupes atteinte pour cette assemblée');
+    if (file.groups.filter((g) => g.createdBy === idmembre).length >= DM_GROUPS_MAX) {
+      throw new BadRequestException('Limite de groupes atteinte');
     }
 
     const nextId =
@@ -865,7 +856,7 @@ export class ConversationsService {
       throw new BadRequestException('Aucun membre à ajouter');
     }
     for (const mid of unique) {
-      await this.assertSameAssemblee(idmembre, mid);
+      await this.assertCanMessagePartner(idmembre, mid);
     }
     const file = await readDmGroupsFile();
     const g = file.groups.find((x) => x.id === groupId);
